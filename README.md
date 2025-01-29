@@ -1,6 +1,6 @@
 # Epigram FE11
 
-![fe11-안형석-Epigram_ (1)](https://github.com/user-attachments/assets/c282acac-5ebb-44cd-b78b-4db5697bdd38)
+![fe11-안형석-Epigram_])
 
 ## 〰️ 프로젝트 설명
 - [배포 사이트](https://fe11-team4-linkbrary.netlify.app/)   
