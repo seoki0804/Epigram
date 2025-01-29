@@ -4,7 +4,7 @@
 
 ## 〰️ 프로젝트 설명
 - [배포 사이트](https://fe11-team4-linkbrary.netlify.app/)   
-- 글공유 플랫폼 제작
+- 글공유 플랫폼 Epigram제작
 
 ## ➰ 팀원 
 
