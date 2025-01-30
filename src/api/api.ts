@@ -100,9 +100,15 @@ export const getEpigrams = async (page: number = 1, pageSize: number = 10): Prom
   return response.data;
 };
 
-export const postEpigram = async (data: { content: string; author: string; sourceTitle?: string; sourceUrl?: string; tags?: string[] }): Promise<EpigramResponse> => {
-  const response: AxiosResponse<EpigramResponse> = await instance.post(PATHS.EPIGRAM, data);
-  return response.data;
+export const postEpigram = async (data: {
+  content: string;
+  author: string;
+  sourceTitle?: string;
+  sourceUrl?: string;
+  tags?: string[];
+}): Promise<EpigramResponse> => {
+  const response: AxiosResponse<{ epigram: EpigramResponse }> = await instance.post(PATHS.EPIGRAM, data);
+  return response.data.epigram; // API 응답 구조에 따라 수정 필요
 };
 
 export const updateEpigram = async (epigramId: string, data: { content: string }): Promise<EpigramResponse> => {
