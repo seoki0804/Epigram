@@ -1,0 +1,159 @@
+/* File: src/app/epigrams/[id]/epigramDetail.module.css */
+
+.container {
+    max-width: 700px;
+    margin: auto;
+    padding: 2rem;
+    font-family: Arial, sans-serif;
+  }
+  
+  .epigramBox {
+    background: #ffffff;
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .options {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .options button {
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.2s;
+  }
+  
+  .options button:hover {
+    background: #e0e0e0;
+  }
+  
+  .details {
+    font-size: 0.9rem;
+    color: #555;
+    margin-top: 0.5rem;
+  }
+  
+  .details a {
+    color: #6d6afe;
+    text-decoration: none;
+    font-weight: bold;
+  }
+  
+  .details a:hover {
+    text-decoration: underline;
+  }
+  
+  .tags {
+    display: flex;
+    gap: 5px;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+  
+  .tags span {
+    background: #eef;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+  }
+  
+  .likeButton {
+    display: flex;
+    align-items: center;
+    background: #ff5757;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    margin-top: 1rem;
+    transition: background 0.2s;
+  }
+  
+  .likeButton:hover {
+    background: #ff4242;
+  }
+  
+  .commentSection {
+    margin-top: 2rem;
+    background: #f9f9f9;
+    padding: 1rem;
+    border-radius: 5px;
+  }
+  
+  .commentSection h3 {
+    margin-bottom: 1rem;
+  }
+  
+  .commentSection textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+    resize: none;
+  }
+  
+  .commentSection button {
+    background: #6d6afe;
+    color: white;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-top: 0.5rem;
+    transition: background 0.2s;
+  }
+  
+  .commentSection button:hover {
+    background: #5a5af0;
+  }
+  
+  .commentList {
+    margin-top: 1.5rem;
+  }
+  
+  .comment {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: #ffffff;
+    padding: 1rem;
+    border-radius: 5px;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .comment span {
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .comment p {
+    margin: 0;
+    color: #555;
+  }
+  
+  .comment button {
+    align-self: flex-end;
+    background: none;
+    border: none;
+    color: red;
+    cursor: pointer;
+    font-size: 0.8rem;
+  }
+  
