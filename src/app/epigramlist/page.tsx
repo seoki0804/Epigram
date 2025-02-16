@@ -1,19 +1,20 @@
-// File: src/app/epigramlist/page.tsx
-
 "use client";
 
 import { useEffect, useState } from "react";
 import styles from "./epigramList.module.css";
 import Header from "@/components/Header";
-import { getEpigrams } from "@/api/api";
+import { getEpigrams, deleteEpigram } from "@/api/api";
 import { EpigramResponse } from "@/types/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/utils/AuthContext";
 
 const EpigramListPage = () => {
   const [epigrams, setEpigrams] = useState<EpigramResponse[]>([]);
   const [page, setPage] = useState(1);
+  const [selectedEpigram, setSelectedEpigram] = useState<string | null>(null);
   const router = useRouter();
+  const { user } = useAuth(); // 현재 로그인한 유저 정보
 
   useEffect(() => {
     fetchEpigrams();
@@ -38,18 +39,27 @@ const EpigramListPage = () => {
     }
   };
 
+  const handleDelete = async (epigramId: string) => {
+    if (window.confirm("정말 삭제하시겠습니까?")) {
+      try {
+        await deleteEpigram(epigramId);
+        setEpigrams((prev) => prev.filter((epigram) => epigram.id !== epigramId));
+      } catch (error) {
+        console.error("에피그램 삭제 실패", error);
+      }
+    }
+  };
+
   return (
     <div className={styles.container}>
       <Header />
       <h2 className={styles.title}>피드</h2>
       <div className={styles.grid}>
         {epigrams.map((epigram) => (
-          <div 
-            key={epigram.id} 
-            className={styles.epigramCard} 
-            onClick={() => router.push(`/epigrams/${epigram.id}`)}
-          >
-            <p>{epigram.content}</p>
+          <div key={epigram.id} className={styles.epigramCard}>
+            <p onClick={() => router.push(`/epigrams/${epigram.id}`)}>
+              {epigram.content}
+            </p>
             {epigram.author && <span className={styles.author}>- {epigram.author}</span>}
             <div className={styles.tags}>
               {epigram.tags?.map((tag, index) => (
@@ -58,9 +68,32 @@ const EpigramListPage = () => {
                 </span>
               ))}
             </div>
+
+            {/* 현재 로그인한 유저가 작성한 글에만 옵션 버튼 표시 */}
+            {user?.id === epigram.userId && (
+              <div className={styles.optionsContainer}>
+                <button
+                  className={styles.optionsButton}
+                  onClick={() =>
+                    setSelectedEpigram(selectedEpigram === epigram.id ? null : epigram.id)
+                  }
+                >
+                  ⋮
+                </button>
+                {selectedEpigram === epigram.id && (
+                  <div className={styles.dropdownMenu}>
+                    <button onClick={() => router.push(`/epigrams/edit/${epigram.id}`)}>
+                      수정하기
+                    </button>
+                    <button onClick={() => handleDelete(epigram.id)}>삭제하기</button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>
+
       <div className={styles.buttonContainer}>
         <button onClick={loadMoreEpigrams} className={styles.loadMoreButton}>
           + 에피그램 더보기

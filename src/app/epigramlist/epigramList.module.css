@@ -71,3 +71,41 @@
   .createButton {
     background: #111;
   }
+
+  .optionsContainer {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .optionsButton {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 5px;
+  }
+  
+  .dropdownMenu {
+    position: absolute;
+    top: 20px;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+  }
+  
+  .dropdownMenu button {
+    display: block;
+    width: 100px;
+    padding: 8px;
+    text-align: left;
+    background: white;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .dropdownMenu button:hover {
+    background: #f0f0f0;
+  }
