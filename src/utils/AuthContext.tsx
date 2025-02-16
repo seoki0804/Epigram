@@ -42,7 +42,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     } catch (error) {
       console.error('🚨 유저 데이터를 불러오는데 실패했습니다:', error);
-      logout(); // 유저 정보 불러오기 실패 시 로그아웃 처리
     }
   };
 
