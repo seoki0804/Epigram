@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import styles from "./epigramList.module.css";
 import Header from "@/components/Header";
 import { getEpigrams, deleteEpigram } from "@/api/api";
-import { EpigramResponse } from "@/types/api";
+import { EpigramResponse } from "@/api/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/utils/AuthContext";

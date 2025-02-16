@@ -1,7 +1,6 @@
 'use client';
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { postSignIn, getUser } from '../api/api';
-import { UserResponse } from '../types/api';
+import { postSignIn, getUser, UserResponse } from '@/api/api';
 
 interface AuthContextType {
   accessToken: string | null;
@@ -20,7 +19,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [user, setUser] = useState<UserResponse | null>(null);
 
-  // 새로고침 시 로컬 스토리지에서 accessToken와 사용자 정보 불러오기
+  // 새로고침 시 로컬 스토리지에서 accessToken 및 사용자 정보 불러오기
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     const savedUser = localStorage.getItem('user');
@@ -43,7 +42,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           localStorage.setItem('user', JSON.stringify(userData));
           setUser(userData);
         } else {
-          console.error('유저데이터를 불러오는데 실패했습니다.');
+          console.error('유저 데이터를 불러오는데 실패했습니다.');
         }
       }
     } catch (error) {

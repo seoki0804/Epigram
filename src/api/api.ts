@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
-// .env.local 에서 BASE_URL 가져오기
+// .env.local에서 BASE_URL 가져오기
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://fe-project-epigram-api.vercel.app/11-안형석';
 
 // API 경로 설정
@@ -13,7 +13,7 @@ const PATHS = {
   COMMENT: '/comments',
 };
 
-// Axios instance
+// Axiosinstance 설정
 const instance: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   headers: {
@@ -21,7 +21,7 @@ const instance: AxiosInstance = axios.create({
   },
 });
 
-// 로그인 accessToken
+// 로그인 accessToken 인터셉터 추가
 instance.interceptors.request.use((config) => {
   const token = localStorage.getItem('accessToken');
   if (token) {
@@ -30,8 +30,8 @@ instance.interceptors.request.use((config) => {
   return config;
 });
 
-// 타입 정의
-interface AuthResponse {
+// 타입 정리
+export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
   user: {
@@ -45,7 +45,7 @@ interface AuthResponse {
   };
 }
 
-interface UserResponse {
+export interface UserResponse {
   id: string;
   name: string;
   email: string;
@@ -54,7 +54,7 @@ interface UserResponse {
   createdAt: string;
 }
 
-interface EpigramResponse {
+export interface EpigramResponse {
   id: string;
   content: string;
   createdAt: string;
@@ -64,9 +64,10 @@ interface EpigramResponse {
   sourceUrl?: string;
   tags?: string[];
   likes?: number;
+  userId?: string;  // 🔹 추가됨
 }
 
-interface CommentResponse {
+export interface CommentResponse {
   id: string;
   epigramId: string;
   content: string;
@@ -76,15 +77,12 @@ interface CommentResponse {
   username?: string;
 }
 
-// Auth
-export const postSignIn = async (
-  email: string,
-  password: string
-): Promise<AuthResponse> => {
-  const response: AxiosResponse<AuthResponse> = await instance.post(
-    `${PATHS.AUTH}/signIn`,
-    { email, password }
-  );
+// ✅ Auth API
+export const postSignIn = async (email: string, password: string): Promise<AuthResponse> => {
+  const response: AxiosResponse<AuthResponse> = await instance.post(`${PATHS.AUTH}/signIn`, {
+    email,
+    password,
+  });
   return response.data;
 };
 
@@ -94,14 +92,16 @@ export const postSignUp = async (
   passwordConfirmation: string,
   nickname: string
 ): Promise<AuthResponse> => {
-  const response: AxiosResponse<AuthResponse> = await instance.post(
-    `${PATHS.AUTH}/signUp`,
-    { email, password, passwordConfirmation, nickname }
-  );
+  const response: AxiosResponse<AuthResponse> = await instance.post(`${PATHS.AUTH}/signUp`, {
+    email,
+    password,
+    passwordConfirmation,
+    nickname,
+  });
   return response.data;
 };
 
-// User
+// ✅ User API
 export const getUser = async (): Promise<UserResponse> => {
   const response: AxiosResponse<UserResponse> = await instance.get(`${PATHS.USER}/me`);
   return response.data;
@@ -112,7 +112,7 @@ export const updateUserInfo = async (data: Partial<UserResponse>): Promise<UserR
   return response.data;
 };
 
-// Epigram
+// ✅ Epigram API
 export const getEpigrams = async (page: number = 1, pageSize: number = 10): Promise<EpigramResponse[]> => {
   const response: AxiosResponse<EpigramResponse[]> = await instance.get(PATHS.EPIGRAM, {
     params: { page, pageSize },
@@ -153,7 +153,7 @@ export const unlikeEpigram = async (epigramId: string): Promise<void> => {
   await instance.delete(`${PATHS.EPIGRAM}/${epigramId}/like`);
 };
 
-// Comment
+// ✅ Comment API
 export const postComment = async (data: { epigramId: string; content: string }): Promise<CommentResponse> => {
   const response: AxiosResponse<CommentResponse> = await instance.post(PATHS.COMMENT, data);
   return response.data;

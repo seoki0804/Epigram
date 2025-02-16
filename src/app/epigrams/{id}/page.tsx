@@ -13,7 +13,7 @@ import {
   deleteComment,
   updateComment,
 } from "@/api/api";
-import { EpigramResponse, CommentResponse } from "@/types/api";
+import { EpigramResponse, CommentResponse } from "@/api/api";
 import { useRouter, useParams } from "next/navigation";
 
 const EpigramDetailPage = () => {
