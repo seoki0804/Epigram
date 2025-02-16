@@ -41,13 +41,15 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
-
+  
     if (!emailError && !passwordError && email && password) {
       try {
+        console.log("🔍 로그인 요청:", email, password);
         await login(email, password);
+        console.log("✅ 로그인 요청 성공");
         window.location.href = "/";
       } catch (error) {
-        console.error("로그인 실패:", error);
+        console.error("🚨 로그인 요청 실패:", error);
         setLoginError("로그인에 실패했습니다. 이메일과 비밀번호를 확인하세요.");
       }
     }

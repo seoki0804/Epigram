@@ -1,4 +1,5 @@
 'use client';
+
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { postSignIn, getUser, UserResponse } from '@/api/api';
 
@@ -22,31 +23,53 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // 새로고침 시 로컬 스토리지에서 accessToken 및 사용자 정보 불러오기
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
-    const savedUser = localStorage.getItem('user');
 
-    if (token) setAccessToken(token);
-    if (savedUser) setUser(JSON.parse(savedUser) as UserResponse);
+    console.log("🔍 Stored AccessToken:", token); // 디버깅
+
+    if (token) {
+      setAccessToken(token);
+      fetchUserData();
+    }
   }, []);
+
+  // 사용자 정보 가져오기
+  const fetchUserData = async () => {
+    try {
+      const userData = await getUser();
+      if (userData) {
+        localStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData);
+      }
+    } catch (error) {
+      console.error('🚨 유저 데이터를 불러오는데 실패했습니다:', error);
+      logout(); // 유저 정보 불러오기 실패 시 로그아웃 처리
+    }
+  };
 
   // 로그인 함수
   const login = async (email: string, password: string) => {
     try {
       const response = await postSignIn(email, password);
-
+  
       if (response.accessToken) {
-        localStorage.setItem('accessToken', response.accessToken);
+        console.log("✅ 로그인 성공! 토큰 저장:", response.accessToken);
+        localStorage.setItem("accessToken", response.accessToken);
         setAccessToken(response.accessToken);
-
+  
+        // 🔹 유저 정보 가져오기
         const userData = await getUser();
         if (userData) {
-          localStorage.setItem('user', JSON.stringify(userData));
+          console.log("✅ 유저 데이터:", userData);
+          localStorage.setItem("user", JSON.stringify(userData));
           setUser(userData);
         } else {
-          console.error('유저 데이터를 불러오는데 실패했습니다.');
+          console.error("🚨 유저 데이터를 불러오는데 실패했습니다.");
         }
+      } else {
+        throw new Error("🚨 로그인 응답에 토큰이 없습니다.");
       }
     } catch (error) {
-      console.error('로그인 실패:', error);
+      console.error("🚨 로그인 실패:", error);
     }
   };
 

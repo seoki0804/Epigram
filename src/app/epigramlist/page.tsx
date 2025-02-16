@@ -14,7 +14,7 @@ const EpigramListPage = () => {
   const [page, setPage] = useState(1);
   const [selectedEpigram, setSelectedEpigram] = useState<string | null>(null);
   const router = useRouter();
-  const { user } = useAuth(); // 현재 로그인한 유저 정보
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchEpigrams();
@@ -63,9 +63,7 @@ const EpigramListPage = () => {
             {epigram.author && <span className={styles.author}>- {epigram.author}</span>}
             <div className={styles.tags}>
               {epigram.tags?.map((tag, index) => (
-                <span key={index} className={styles.tag}>
-                  #{tag}
-                </span>
+                <span key={index} className={styles.tag}>#{tag}</span>
               ))}
             </div>
 

@@ -1,4 +1,3 @@
-// File: src/app/epigrams/[id]/page.tsx
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
@@ -119,8 +118,9 @@ const EpigramDetailPage = () => {
           </div>
           <div className={styles.details}>
             <p>- {epigram.author}</p>
-            {epigram.sourceUrl && (
-              <a href={epigram.sourceUrl} target="_blank" rel="noopener noreferrer">
+            {/* 🔹 sourceUrl → referenceUrl, sourceTitle → referenceTitle로 변경 */}
+            {epigram.referenceUrl && (
+              <a href={epigram.referenceUrl} target="_blank" rel="noopener noreferrer">
                 출처 바로가기
               </a>
             )}
