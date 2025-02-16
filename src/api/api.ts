@@ -1,25 +1,27 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
-const TEAMID = '11-안형석';
+// .env.local 에서 BASE_URL 가져오기
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://fe-project-epigram-api.vercel.app/11-안형석';
 
+// API 경로 설정
 const PATHS = {
-  AUTH: `/teamid/auth`.replace('teamId', TEAMID),
-  USER: `/teamid/users`.replace('teamId', TEAMID),
-  OAUTH: `/teamid/oauthApps`.replace('teamId', TEAMID),
-  IMAGE: `/teamid/images/upload`.replace('teamId', TEAMID),
-  EPIGRAM: `/teamid/epigrams`.replace('teamId', TEAMID),
-  EMOTION_LOG: `/teamid/emotionLogs`.replace('teamId', TEAMID),
-  COMMENT: `/teamid/comments`.replace('teamId', TEAMID),
+  AUTH: '/auth',
+  USER: '/users',
+  OAUTH: '/oauthApps',
+  IMAGE: '/images/upload',
+  EPIGRAM: '/epigrams',
+  COMMENT: '/comments',
 };
 
+// Axios instance
 const instance: AxiosInstance = axios.create({
-  baseURL: 'https://fe-project-epigram-api.vercel.app/',
+  baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// 로그인 accessToken 인터셉터
+// 로그인 accessToken
 instance.interceptors.request.use((config) => {
   const token = localStorage.getItem('accessToken');
   if (token) {
@@ -31,13 +33,23 @@ instance.interceptors.request.use((config) => {
 // 타입 정의
 interface AuthResponse {
   accessToken: string;
+  refreshToken: string;
+  user: {
+    id: number;
+    email: string;
+    nickname: string;
+    teamId: string;
+    updatedAt: string;
+    createdAt: string;
+    image: string | null;
+  };
 }
 
 interface UserResponse {
   id: string;
   name: string;
   email: string;
-  imageSource: string;
+  imageSource: string | null;
   nickname: string;
   createdAt: string;
 }
@@ -47,6 +59,11 @@ interface EpigramResponse {
   content: string;
   createdAt: string;
   updatedAt: string;
+  author?: string;
+  sourceTitle?: string;
+  sourceUrl?: string;
+  tags?: string[];
+  likes?: number;
 }
 
 interface CommentResponse {
@@ -55,12 +72,14 @@ interface CommentResponse {
   content: string;
   createdAt: string;
   updatedAt: string;
+  userId?: string;
+  username?: string;
 }
 
-// Auth API
+// Auth
 export const postSignIn = async (
   email: string,
-  password: string,
+  password: string
 ): Promise<AuthResponse> => {
   const response: AxiosResponse<AuthResponse> = await instance.post(
     `${PATHS.AUTH}/signIn`,
@@ -72,18 +91,19 @@ export const postSignIn = async (
 export const postSignUp = async (
   email: string,
   password: string,
-  name: string,
-): Promise<{ message: string }> => {
-  const response: AxiosResponse<{ message: string }> = await instance.post(
+  passwordConfirmation: string,
+  nickname: string
+): Promise<AuthResponse> => {
+  const response: AxiosResponse<AuthResponse> = await instance.post(
     `${PATHS.AUTH}/signUp`,
-    { email, password, name }
+    { email, password, passwordConfirmation, nickname }
   );
   return response.data;
 };
 
-// User API
+// User
 export const getUser = async (): Promise<UserResponse> => {
-  const response: AxiosResponse<UserResponse> = await instance.get(PATHS.USER);
+  const response: AxiosResponse<UserResponse> = await instance.get(`${PATHS.USER}/me`);
   return response.data;
 };
 
@@ -92,11 +112,16 @@ export const updateUserInfo = async (data: Partial<UserResponse>): Promise<UserR
   return response.data;
 };
 
-// Epigram API
+// Epigram
 export const getEpigrams = async (page: number = 1, pageSize: number = 10): Promise<EpigramResponse[]> => {
   const response: AxiosResponse<EpigramResponse[]> = await instance.get(PATHS.EPIGRAM, {
     params: { page, pageSize },
   });
+  return response.data;
+};
+
+export const getEpigramById = async (epigramId: string): Promise<EpigramResponse> => {
+  const response: AxiosResponse<EpigramResponse> = await instance.get(`${PATHS.EPIGRAM}/${epigramId}`);
   return response.data;
 };
 
@@ -107,8 +132,8 @@ export const postEpigram = async (data: {
   sourceUrl?: string;
   tags?: string[];
 }): Promise<EpigramResponse> => {
-  const response: AxiosResponse<{ epigram: EpigramResponse }> = await instance.post(PATHS.EPIGRAM, data);
-  return response.data.epigram; // API 응답 구조에 따라 수정 필요
+  const response: AxiosResponse<EpigramResponse> = await instance.post(PATHS.EPIGRAM, data);
+  return response.data;
 };
 
 export const updateEpigram = async (epigramId: string, data: { content: string }): Promise<EpigramResponse> => {
@@ -128,14 +153,16 @@ export const unlikeEpigram = async (epigramId: string): Promise<void> => {
   await instance.delete(`${PATHS.EPIGRAM}/${epigramId}/like`);
 };
 
-// Comment API
+// Comment
 export const postComment = async (data: { epigramId: string; content: string }): Promise<CommentResponse> => {
   const response: AxiosResponse<CommentResponse> = await instance.post(PATHS.COMMENT, data);
   return response.data;
 };
 
-export const getComments = async (): Promise<CommentResponse[]> => {
-  const response: AxiosResponse<CommentResponse[]> = await instance.get(PATHS.COMMENT);
+export const getComments = async (epigramId: string): Promise<CommentResponse[]> => {
+  const response: AxiosResponse<CommentResponse[]> = await instance.get(PATHS.COMMENT, {
+    params: { epigramId },
+  });
   return response.data;
 };
 

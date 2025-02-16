@@ -4,6 +4,7 @@
 import React, { useState } from "react";
 import { postEpigram } from "@/api/api";
 import { useRouter } from "next/navigation";
+import Header from "@/components/Header"; // Header 컴포넌트 추가
 import styles from "./addepigram.module.css";
 
 const AddepigramPage = () => {
@@ -95,89 +96,94 @@ const AddepigramPage = () => {
   };
 
   return (
-    <div className={styles.container}>
-      <h1 className={styles.title}>에피그램 만들기</h1>
+    <div>
+      {/*Header 컴포넌트 추가 */}
+      <Header />
 
-      {/* 내용 입력 */}
-      <label className={styles.label}>내용 *</label>
-      <textarea
-        className={styles.textarea}
-        value={content}
-        onChange={handleContentChange}
-        placeholder="500자 이내로 입력해주세요."
-        maxLength={500}
-      />
-      {errorMessage && <p className={styles.error}>{errorMessage}</p>}
+      <div className={styles.container}>
+        <h1 className={styles.title}>에피그램 만들기</h1>
 
-      {/* 저자 입력 */}
-      <label className={styles.label}>저자 *</label>
-      <div className={styles.radioGroup}>
-        <label>
-          <input type="radio" value="direct" checked={authorType === "direct"} onChange={() => setAuthorType("direct")} /> 직접 입력
-        </label>
-        <label>
-          <input type="radio" value="unknown" checked={authorType === "unknown"} onChange={() => setAuthorType("unknown")} /> 알 수 없음
-        </label>
-        <label>
-          <input type="radio" value="self" checked={authorType === "self"} onChange={() => setAuthorType("self")} /> 본인
-        </label>
-      </div>
-      {authorType === "direct" && (
+        {/* 내용 입력 */}
+        <label className={styles.label}>내용 *</label>
+        <textarea
+          className={styles.textarea}
+          value={content}
+          onChange={handleContentChange}
+          placeholder="500자 이내로 입력해주세요."
+          maxLength={500}
+        />
+        {errorMessage && <p className={styles.error}>{errorMessage}</p>}
+
+        {/* 저자 입력 */}
+        <label className={styles.label}>저자 *</label>
+        <div className={styles.radioGroup}>
+          <label>
+            <input type="radio" value="direct" checked={authorType === "direct"} onChange={() => setAuthorType("direct")} /> 직접 입력
+          </label>
+          <label>
+            <input type="radio" value="unknown" checked={authorType === "unknown"} onChange={() => setAuthorType("unknown")} /> 알 수 없음
+          </label>
+          <label>
+            <input type="radio" value="self" checked={authorType === "self"} onChange={() => setAuthorType("self")} /> 본인
+          </label>
+        </div>
+        {authorType === "direct" && (
+          <input
+            className={styles.input}
+            type="text"
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
+            placeholder="저자 이름 입력"
+          />
+        )}
+
+        {/* 출처 입력 */}
+        <label className={styles.label}>출처</label>
         <input
           className={styles.input}
           type="text"
-          value={author}
-          onChange={(e) => setAuthor(e.target.value)}
-          placeholder="저자 이름 입력"
+          value={sourceTitle}
+          onChange={(e) => setSourceTitle(e.target.value)}
+          placeholder="출처 제목 입력"
         />
-      )}
+        <input
+          className={styles.input}
+          type="text"
+          value={sourceUrl}
+          onChange={(e) => setSourceUrl(e.target.value)}
+          placeholder="URL (ex. https://www.website.com)"
+        />
+        {sourceUrl && (
+          <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className={styles.sourceLink}>
+            출처 열기
+          </a>
+        )}
 
-      {/* 출처 입력 */}
-      <label className={styles.label}>출처</label>
-      <input
-        className={styles.input}
-        type="text"
-        value={sourceTitle}
-        onChange={(e) => setSourceTitle(e.target.value)}
-        placeholder="출처 제목 입력"
-      />
-      <input
-        className={styles.input}
-        type="text"
-        value={sourceUrl}
-        onChange={(e) => setSourceUrl(e.target.value)}
-        placeholder="URL (ex. https://www.website.com)"
-      />
-      {sourceUrl && (
-        <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className={styles.sourceLink}>
-          출처 열기
-        </a>
-      )}
+        {/* 태그 입력 */}
+        <label className={styles.label}>태그</label>
+        <input
+          className={styles.input}
+          type="text"
+          placeholder="입력하여 태그 작성 (최대 10자)"
+          onKeyDown={handleTagInput}
+        />
+        <div className={styles.tagContainer}>
+          {tags.map((tag, index) => (
+            <span key={index} className={styles.tag}>
+              {tag} <button onClick={() => removeTag(index)}>x</button>
+            </span>
+          ))}
+        </div>
 
-      {/* 태그 입력 */}
-      <label className={styles.label}>태그</label>
-      <input
-        className={styles.input}
-        type="text"
-        placeholder="입력하여 태그 작성 (최대 10자)"
-        onKeyDown={handleTagInput}
-      />
-      <div className={styles.tagContainer}>
-        {tags.map((tag, index) => (
-          <span key={index} className={styles.tag}>
-            {tag} <button onClick={() => removeTag(index)}>x</button>
-          </span>
-        ))}
+        {/* 작성 완료 버튼 */}
+        <button
+          className={styles.submitButton}
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "저장 중..." : "작성 완료"}
+        </button>
       </div>
-
-      {/* 작성 완료 버튼 */}
-      <button
-        className={styles.submitButton}
-        onClick={handleSubmit}
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? "저장 중..." : "작성 완료"}
-      </button>
     </div>
   );
 };

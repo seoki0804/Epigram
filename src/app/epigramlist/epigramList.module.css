@@ -51,8 +51,8 @@
   
   .loadMoreButton,
   .createButton {
-    background: linear-gradient(90deg, #6d6afe 0%, #6ae3fe 100%);
-    color: white;
+    background: #F5F7FA;
+    color: #cccccc;
     font-weight: bold;
     padding: 0.8rem 1.5rem;
     border-radius: 8px;

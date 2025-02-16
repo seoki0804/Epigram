@@ -16,7 +16,7 @@ const notFound = () => {
         onClick={() => {
           router.push("/");
         }}
-        className="w-[350px] h-[53px] rounded-[8px] bg-gradient-to-r from-[#6D6AFE] to-[#6AE3FE] text-[18px] text-[#ffffff] font-semibold"
+        className="w-[350px] h-[53px] rounded-[8px] bg-[#CBD3E1] text-[18px] text-[#ffffff] font-semibold"
       >
         홈으로 이동
       </button>

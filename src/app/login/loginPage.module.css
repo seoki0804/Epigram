@@ -64,25 +64,6 @@
   background: linear-gradient(90deg, #6f6fff, #32aaff);
 }
 
-.socialLogin {
-  margin-top: 20px;
-  padding: 12px;
-  background-color: #E7EFFB;
-  border-radius: 8px;
-  text-align: center;
-}
-
-.socialIcons {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  margin-top: 12px;
-}
-
-.socialIconImage {
-  width: 40px;
-  height: 40px;
-}
 
 .passwordInputGroup {
   position: relative;
