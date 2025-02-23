@@ -45,9 +45,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  // 로그인 함수
   const login = async (email: string, password: string) => {
     try {
+      console.log("🔍 로그인 요청:", email, password);
       const response = await postSignIn(email, password);
   
       if (response.accessToken) {
@@ -56,7 +56,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setAccessToken(response.accessToken);
   
         // 🔹 유저 정보 가져오기
-        const userData = await getUser();
+        console.log("🔍 로그인 후 유저 데이터 요청 실행...");
+        const userData = await getUser().catch((error) => {
+          console.error("🚨 유저 데이터 요청 실패:", error);
+        });
+  
         if (userData) {
           console.log("✅ 유저 데이터:", userData);
           localStorage.setItem("user", JSON.stringify(userData));

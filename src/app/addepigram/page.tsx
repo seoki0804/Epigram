@@ -76,7 +76,7 @@ const AddepigramPage = () => {
         author: finalAuthor,
         referenceTitle: referenceTitle.trim() || undefined,
         referenceUrl: referenceUrl.trim() || undefined,
-        tags,
+        tags:[...tags],
       });
 
       console.log("📌 저장된 에피그램 데이터:", newEpigram);
