@@ -32,7 +32,7 @@ instance.interceptors.request.use((config) => {
   return config;
 });
 
-// ✅ 타입 정의
+// 타입 정의
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
@@ -79,7 +79,7 @@ export interface CommentResponse {
   username?: string;
 }
 
-// ✅ Auth API
+// Auth API
 export const postSignIn = async (email: string, password: string): Promise<AuthResponse> => {
   try {
     const response: AxiosResponse<AuthResponse> = await instance.post(
@@ -112,7 +112,7 @@ export const postSignUp = async (
   return response.data;
 };
 
-// ✅ User API
+// User API
 export const getUser = async (): Promise<UserResponse> => {
   const response: AxiosResponse<UserResponse> = await instance.get(
     `${PATHS.USER}/me`
@@ -130,7 +130,7 @@ export const updateUserInfo = async (
   return response.data;
 };
 
-// ✅ Epigram API
+// Epigram API
 export const getEpigrams = async (
   page: number = 1,
   pageSize: number = 10
@@ -159,7 +159,7 @@ export const postEpigram = async (data: {
   referenceUrl?: string;
   tags?: string[];
 }): Promise<EpigramResponse> => {
-  const token = localStorage.getItem("accessToken"); // ✅ 토큰 가져오기
+  const token = localStorage.getItem("accessToken");
 
   if (!token) {
     throw new Error("🚨 인증 토큰이 없습니다. 로그인이 필요합니다.");
@@ -176,7 +176,7 @@ export const postEpigram = async (data: {
     },
     {
       headers: {
-        Authorization: `Bearer ${token}`, // ✅ 인증 헤더 추가
+        Authorization: `Bearer ${token}`,
       },
     }
   );
@@ -207,7 +207,7 @@ export const unlikeEpigram = async (epigramId: string): Promise<void> => {
   await instance.delete(`${PATHS.EPIGRAM}/${epigramId}/like`);
 };
 
-// ✅ Comment API
+// Comment API
 export const postComment = async (data: {
   epigramId: string;
   content: string;

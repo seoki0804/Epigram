@@ -18,7 +18,7 @@ const AddepigramPage = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 내용 입력 핸들러 (500자 제한)
+  // 500자 제한 내용입력
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
     if (text.length > 500) {

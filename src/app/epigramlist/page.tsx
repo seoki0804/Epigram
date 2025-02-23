@@ -67,7 +67,6 @@ const EpigramListPage = () => {
               ))}
             </div>
 
-            {/* 현재 로그인한 유저가 작성한 글에만 옵션 버튼 표시 */}
             {user?.id === epigram.userId && (
               <div className={styles.optionsContainer}>
                 <button
