@@ -1,9 +1,10 @@
+// File: src/app/addepigram/page.tsx
 "use client";
 
 import React, { useState } from "react";
 import { postEpigram } from "@/api/api";
 import { useRouter } from "next/navigation";
-import Header from "@/components/Header";
+import Header from "@/components/Header"; // Header 컴포넌트 추가
 import styles from "./addepigram.module.css";
 
 const AddepigramPage = () => {
@@ -12,8 +13,8 @@ const AddepigramPage = () => {
   const [content, setContent] = useState("");
   const [authorType, setAuthorType] = useState("direct");
   const [author, setAuthor] = useState("");
-  const [referenceTitle, setReferenceTitle] = useState("");
-  const [referenceUrl, setReferenceUrl] = useState("");
+  const [sourceTitle, setSourceTitle] = useState("");
+  const [sourceUrl, setSourceUrl] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -74,12 +75,12 @@ const AddepigramPage = () => {
       const newEpigram = await postEpigram({
         content,
         author: finalAuthor,
-        referenceTitle: referenceTitle.trim() || undefined,
-        referenceUrl: referenceUrl.trim() || undefined,
-        tags:[...tags],
+        sourceTitle: sourceTitle.trim() || undefined,
+        sourceUrl: sourceUrl.trim() || undefined,
+        tags,
       });
 
-      console.log("📌 저장된 에피그램 데이터:", newEpigram);
+      console.log("📌 저장된 에피그램 데이터:", newEpigram); // API 응답 확인
 
       if (newEpigram?.id) {
         router.push(`/epigrams/${newEpigram.id}`);
@@ -96,6 +97,7 @@ const AddepigramPage = () => {
 
   return (
     <div>
+      {/*Header 컴포넌트 추가 */}
       <Header />
 
       <div className={styles.container}>
@@ -140,19 +142,19 @@ const AddepigramPage = () => {
         <input
           className={styles.input}
           type="text"
-          value={referenceTitle}
-          onChange={(e) => setReferenceTitle(e.target.value)}
+          value={sourceTitle}
+          onChange={(e) => setSourceTitle(e.target.value)}
           placeholder="출처 제목 입력"
         />
         <input
           className={styles.input}
           type="text"
-          value={referenceUrl}
-          onChange={(e) => setReferenceUrl(e.target.value)}
+          value={sourceUrl}
+          onChange={(e) => setSourceUrl(e.target.value)}
           placeholder="URL (ex. https://www.website.com)"
         />
-        {referenceUrl && (
-          <a href={referenceUrl} target="_blank" rel="noopener noreferrer" className={styles.sourceLink}>
+        {sourceUrl && (
+          <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className={styles.sourceLink}>
             출처 열기
           </a>
         )}

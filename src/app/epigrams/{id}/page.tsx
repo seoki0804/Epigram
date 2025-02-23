@@ -1,3 +1,4 @@
+// File: src/app/epigrams/[id]/page.tsx
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
@@ -12,7 +13,7 @@ import {
   deleteComment,
   updateComment,
 } from "@/api/api";
-import { EpigramResponse, CommentResponse } from "@/api/api";
+import { EpigramResponse, CommentResponse } from "@/types/api";
 import { useRouter, useParams } from "next/navigation";
 
 const EpigramDetailPage = () => {
@@ -118,9 +119,8 @@ const EpigramDetailPage = () => {
           </div>
           <div className={styles.details}>
             <p>- {epigram.author}</p>
-            
-            {epigram.referenceUrl && (
-              <a href={epigram.referenceUrl} target="_blank" rel="noopener noreferrer">
+            {epigram.sourceUrl && (
+              <a href={epigram.sourceUrl} target="_blank" rel="noopener noreferrer">
                 출처 바로가기
               </a>
             )}

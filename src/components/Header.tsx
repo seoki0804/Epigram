@@ -26,7 +26,7 @@ export default function Header() {
       <div className="flex items-center gap-3">
         <Image src={Profile} alt="프로필 이미지" width={28} height={28} />
         <span className="text-gray-500 text-sm font-medium">
-          {user?.name || "안형석"}
+          {user?.name || "로그인"}
         </span>
       </div>
     </div>

@@ -1,19 +1,14 @@
 'use client';
 
-import { useEffect } from "react";
 import { useAuth } from '../../utils/AuthContext';
 import { useRouter } from 'next/navigation';
 import styles from './LoginButton.module.css';
-import Profile from "../../../public/icons/profile.svg";
+import Profile from "../../../public/icons/profile.svg"
 import Image from 'next/image';
 
 const LoginButton = () => {
   const { user, logout } = useAuth();
   const router = useRouter();
-
-  useEffect(() => {
-    console.log("🔍 현재 로그인된 사용자:", user);
-  }, [user]);
 
   return (
     <div className={styles['login-container']}>
