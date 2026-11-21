@@ -2,7 +2,9 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { postSignUp } from "../../api/api";
+import { useRouter } from "next/navigation";
+import { errorMessage } from "@/api/api";
+import { useAuth } from "@/utils/AuthContext";
 
 export default function Signup() {
   const [email, setEmail] = useState("");
@@ -15,6 +17,10 @@ export default function Signup() {
   const [passwordError, setPasswordError] = useState("");
   const [passwordMatchError, setPasswordMatchError] = useState("");
   const [signupError, setSignupError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const { register } = useAuth();
+  const router = useRouter();
 
   const validateEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -34,16 +40,20 @@ export default function Signup() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSignupError(null);
+    handleEmailBlur();
+    handlePasswordBlur();
+    handlepassworConfirmationBlur();
+    setNameError(name.trim() ? "" : "닉네임을 입력해 주세요.");
+    if (!validateEmail(email) || password.length < 8 || password !== passworConfirmation || !name.trim()) return;
 
-    if (!emailError && !passwordError && !passwordMatchError && name) {
-      try {
-        await postSignUp(email, password, passworConfirmation, name);
-        alert("회원가입이 완료되었습니다!");
-        window.location.href = "/login";
-      } catch (error) {
-        console.error("회원가입 실패:", error);
-        setSignupError("회원가입에 실패했습니다. 다시 시도해주세요.");
-      }
+    setSubmitting(true);
+    try {
+      // 가입 응답에 토큰이 같이 오므로 바로 로그인 상태로 피드에 들어간다.
+      await register({ email, nickname: name.trim(), password, passwordConfirmation: passworConfirmation });
+      router.replace("/epigramlist");
+    } catch (error) {
+      setSignupError(errorMessage(error, "회원가입에 실패했습니다. 다시 시도해 주세요."));
+      setSubmitting(false);
     }
   };
 
@@ -79,22 +89,24 @@ export default function Signup() {
               onChange={(e) => setEmail(e.target.value)}
               onBlur={handleEmailBlur}
               placeholder="이메일 입력"
-              className={`w-full h-[50px] px-4 border rounded-md ${emailError ? 'border-red-500' : 'border-gray-300'}`}
+              className={`w-full h-[50px] px-4 border rounded-md ${emailError ? 'border-red' : 'border-gray-300'}`}
             />
-            {emailError && <p className="text-red-500 text-[12px] mt-[4px]">{emailError}</p>}
+            {emailError && <p className="text-red text-[12px] mt-[4px]">{emailError}</p>}
           </div>
 
           {/* 이름 입력 */}
           <div className="mb-[20px] text-left">
-            <label htmlFor="name" className="block mb-[8px] text-[#333] text-[14px]">이름</label>
+            <label htmlFor="name" className="block mb-[8px] text-[#333] text-[14px]">닉네임</label>
             <input
               type="text"
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="이름 입력"
-              className="w-full h-[50px] px-4 border border-gray-300 rounded-md"
+              placeholder="닉네임 입력 (30자 이내)"
+              maxLength={30}
+              className={`w-full h-[50px] px-4 border rounded-md ${nameError ? 'border-red' : 'border-gray-300'}`}
             />
+            {nameError && <p className="text-red text-[12px] mt-[4px]">{nameError}</p>}
           </div>
 
           {/* 비밀번호 입력 */}
@@ -108,7 +120,7 @@ export default function Signup() {
                 onChange={(e) => setPassword(e.target.value)}
                 onBlur={handlePasswordBlur}
                 placeholder="비밀번호 입력"
-                className={`w-full h-[50px] px-4 border rounded-md ${passwordError ? 'border-red-500' : 'border-gray-300'}`}
+                className={`w-full h-[50px] px-4 border rounded-md ${passwordError ? 'border-red' : 'border-gray-300'}`}
               />
               <button
                 type="button"
@@ -118,7 +130,7 @@ export default function Signup() {
                 <Image src={showPassword ? "/icons/ic_eye_off.svg" : "/icons/ic_eye_on.svg"} alt="비밀번호 보기" width={16} height={16} />
               </button>
             </div>
-            {passwordError && <p className="text-red-500 text-[12px] mt-[4px]">{passwordError}</p>}
+            {passwordError && <p className="text-red text-[12px] mt-[4px]">{passwordError}</p>}
           </div>
 
           {/* 비밀번호 확인 */}
@@ -132,7 +144,7 @@ export default function Signup() {
                 onChange={(e) => setPassworConfirmation(e.target.value)}
                 onBlur={handlepassworConfirmationBlur}
                 placeholder="비밀번호 확인 입력"
-                className={`w-full h-[50px] px-4 border rounded-md ${passwordMatchError ? 'border-red-500' : 'border-gray-300'}`}
+                className={`w-full h-[50px] px-4 border rounded-md ${passwordMatchError ? 'border-red' : 'border-gray-300'}`}
               />
               <button
                 type="button"
@@ -142,14 +154,18 @@ export default function Signup() {
                 <Image src={showpassworConfirmation ? "/icons/ic_eye_off.svg" : "/icons/ic_eye_on.svg"} alt="비밀번호 보기" width={16} height={16} />
               </button>
             </div>
-            {passwordMatchError && <p className="text-red-500 text-[12px] mt-[4px]">{passwordMatchError}</p>}
+            {passwordMatchError && <p className="text-red text-[12px] mt-[4px]">{passwordMatchError}</p>}
           </div>
 
-          {signupError && <p className="text-red-500 text-[12px] mt-[4px]">{signupError}</p>}
+          {signupError && <p className="text-red text-[12px] mt-[4px]">{signupError}</p>}
 
           {/* 회원가입 버튼 */}
-          <button type="submit" className="w-full h-[50px] text-[18px] font-bold rounded-md bg-[#CBD3E1] text-white hover:bg-[#6D6AFE] transition">
-            회원가입
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full h-[50px] text-[18px] font-bold rounded-md bg-[#CBD3E1] text-white hover:bg-[#6D6AFE] transition disabled:opacity-60"
+          >
+            {submitting ? "가입 중..." : "회원가입"}
           </button>
         </form>
       </div>

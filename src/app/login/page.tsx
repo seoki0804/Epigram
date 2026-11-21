@@ -2,7 +2,9 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/utils/AuthContext";
+import { errorMessage } from "@/api/api";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -11,7 +13,9 @@ export default function Login() {
   const [passwordError, setPasswordError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const { login } = useAuth();
+  const router = useRouter();
 
   const togglePasswordVisibility = () => {
     setShowPassword((prev) => !prev);
@@ -41,17 +45,20 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
-  
-    if (!emailError && !passwordError && email && password) {
-      try {
-        console.log("🔍 로그인 요청:", email, password);
-        await login(email, password);
-        console.log("✅ 로그인 요청 성공");
-        window.location.href = "/";
-      } catch (error) {
-        console.error("🚨 로그인 요청 실패:", error);
-        setLoginError("로그인에 실패했습니다. 이메일과 비밀번호를 확인하세요.");
-      }
+    if (!validateEmail(email) || password.length < 8) {
+      handleEmailBlur();
+      handlePasswordBlur();
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await login(email, password);
+      // 로그인이 필요해서 넘어온 경우에는 원래 보던 화면으로 돌려보낸다. 다른 사이트 주소는 받지 않는다.
+      const next = new URLSearchParams(window.location.search).get("next");
+      router.replace(next && next.startsWith("/") && !next.startsWith("//") ? next : "/epigramlist");
+    } catch (error) {
+      setLoginError(errorMessage(error, "로그인에 실패했습니다. 이메일과 비밀번호를 확인해 주세요."));
+      setSubmitting(false);
     }
   };
 
@@ -100,10 +107,10 @@ export default function Login() {
               placeholder="이메일을 입력하세요"
               autoComplete="off"
               className={`w-full h-12 px-4 border rounded-lg text-sm focus:border-[#6D6AFE] focus:outline-none ${
-                emailError ? "border-red-500" : "border-gray-300"
+                emailError ? "border-red" : "border-gray-300"
               }`}
             />
-            {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
+            {emailError && <p className="text-red text-xs mt-1">{emailError}</p>}
           </div>
 
           {/* 비밀번호 입력 */}
@@ -120,7 +127,7 @@ export default function Login() {
                 onBlur={handlePasswordBlur}
                 placeholder="비밀번호를 입력하세요"
                 className={`w-full h-12 px-4 border rounded-lg text-sm focus:border-[#6D6AFE] focus:outline-none ${
-                  passwordError ? "border-red-500" : "border-gray-300"
+                  passwordError ? "border-red" : "border-gray-300"
                 }`}
               />
               <button
@@ -137,17 +144,18 @@ export default function Login() {
                 />
               </button>
             </div>
-            {passwordError && <p className="text-red-500 text-xs mt-1">{passwordError}</p>}
+            {passwordError && <p className="text-red text-xs mt-1">{passwordError}</p>}
           </div>
 
           {/* 로그인 버튼 */}
           <button
             type="submit"
-            className="w-full h-12 bg-[#CBD3E1] text-gray-600 text-lg font-semibold rounded-lg mt-2 hover:bg-[#6D6AFE] hover:text-white transition"
+            disabled={submitting}
+            className="w-full h-12 bg-[#CBD3E1] text-gray-600 text-lg font-semibold rounded-lg mt-2 hover:bg-[#6D6AFE] hover:text-white transition disabled:opacity-60"
           >
-            로그인
+            {submitting ? "로그인 중..." : "로그인"}
           </button>
-          {loginError && <p className="text-red-500 text-xs mt-2">{loginError}</p>}
+          {loginError && <p className="text-red text-xs mt-2">{loginError}</p>}
         </form>
       </div>
     </div>

@@ -1,106 +1,152 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import styles from "./epigramList.module.css";
-import Header from "@/components/Header";
-import { getEpigrams, deleteEpigram } from "@/api/api";
-import { EpigramResponse } from "@/api/api";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import styles from "./epigramList.module.css";
+import Header from "@/components/Header";
+import { deleteEpigram, Epigram, errorMessage, getEpigrams } from "@/api/api";
 import { useAuth } from "@/utils/AuthContext";
 
-const EpigramListPage = () => {
-  const [epigrams, setEpigrams] = useState<EpigramResponse[]>([]);
-  const [page, setPage] = useState(1);
-  const [selectedEpigram, setSelectedEpigram] = useState<string | null>(null);
+const PAGE_SIZE = 6;
+
+export default function EpigramListPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const [epigrams, setEpigrams] = useState<Epigram[]>([]);
+  const [cursor, setCursor] = useState<number | null>(null);
+  const [total, setTotal] = useState(0);
+  const [keyword, setKeyword] = useState("");
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [openMenu, setOpenMenu] = useState<number | null>(null);
 
-  useEffect(() => {
-    fetchEpigrams();
+  // 검색어가 바뀌면 처음부터, '더보기'면 이어서 받는다.
+  const load = useCallback(async (q: string, from: number | null) => {
+    setLoading(true);
+    setError("");
+    try {
+      const page = await getEpigrams({ limit: PAGE_SIZE, cursor: from, keyword: q });
+      setEpigrams((prev) => (from ? [...prev, ...page.list] : page.list));
+      setCursor(page.nextCursor);
+      setTotal(page.totalCount);
+    } catch (err) {
+      setError(errorMessage(err, "에피그램을 불러오지 못했습니다."));
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const fetchEpigrams = async () => {
-    try {
-      const newEpigrams: EpigramResponse[] = await getEpigrams();
-      setEpigrams(newEpigrams);
-    } catch (error) {
-      console.error("에피그램 데이터를 불러오는데 실패했습니다.", error);
-    }
-  };
+  useEffect(() => {
+    load(query, null);
+  }, [load, query]);
 
-  const loadMoreEpigrams = async () => {
+  const handleDelete = async (id: number) => {
+    if (!window.confirm("이 에피그램을 삭제할까요?")) return;
     try {
-      const newEpigrams: EpigramResponse[] = await getEpigrams(page + 1);
-      setEpigrams((prevEpigrams) => [...prevEpigrams, ...newEpigrams]);
-      setPage(page + 1);
-    } catch (error) {
-      console.error("추가 에피그램을 불러오는데 실패했습니다.", error);
-    }
-  };
-
-  const handleDelete = async (epigramId: string) => {
-    if (window.confirm("정말 삭제하시겠습니까?")) {
-      try {
-        await deleteEpigram(epigramId);
-        setEpigrams((prev) => prev.filter((epigram) => epigram.id !== epigramId));
-      } catch (error) {
-        console.error("에피그램 삭제 실패", error);
-      }
+      await deleteEpigram(id);
+      setEpigrams((prev) => prev.filter((e) => e.id !== id));
+      setTotal((t) => t - 1);
+    } catch (err) {
+      setError(errorMessage(err, "삭제하지 못했습니다."));
+    } finally {
+      setOpenMenu(null);
     }
   };
 
   return (
     <div className={styles.container}>
       <Header />
-      <h2 className={styles.title}>피드</h2>
+      <div className="flex flex-wrap items-end justify-between gap-4 mt-8">
+        <h2 className={styles.title}>
+          피드 <span className="text-sm font-normal text-gray-400">{total}개</span>
+        </h2>
+        <form
+          role="search"
+          className="flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setQuery(keyword.trim());
+          }}
+        >
+          <input
+            type="search"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="내용·저자·태그 검색"
+            aria-label="에피그램 검색"
+            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm w-48"
+          />
+          <button type="submit" className="text-sm px-3 py-1.5 rounded-md bg-black text-white">
+            검색
+          </button>
+        </form>
+      </div>
+
+      {error && <p className="text-center text-red mt-6">{error}</p>}
+      {!loading && !error && epigrams.length === 0 && (
+        <p className="text-center text-gray-400 my-16">
+          {query ? `'${query}'에 맞는 에피그램이 없습니다.` : "아직 등록된 에피그램이 없습니다. 첫 글을 남겨 보세요."}
+        </p>
+      )}
+
       <div className={styles.grid}>
         {epigrams.map((epigram) => (
-          <div key={epigram.id} className={styles.epigramCard}>
-            <p onClick={() => router.push(`/epigrams/${epigram.id}`)}>
-              {epigram.content}
-            </p>
-            {epigram.author && <span className={styles.author}>- {epigram.author}</span>}
+          <article key={epigram.id} className={styles.epigramCard}>
+            <Link href={`/epigrams/${epigram.id}`} className="block">
+              <p>{epigram.content}</p>
+              <span className={styles.author}>- {epigram.author}</span>
+            </Link>
             <div className={styles.tags}>
-              {epigram.tags?.map((tag, index) => (
-                <span key={index} className={styles.tag}>#{tag}</span>
+              {epigram.tags.map((tag) => (
+                <span key={tag.id} className={styles.tag}>
+                  #{tag.name}
+                </span>
               ))}
             </div>
 
-            {user?.id === epigram.userId && (
+            {user?.id === epigram.writerId && (
               <div className={styles.optionsContainer}>
                 <button
+                  type="button"
+                  aria-label="더보기 메뉴"
                   className={styles.optionsButton}
-                  onClick={() =>
-                    setSelectedEpigram(selectedEpigram === epigram.id ? null : epigram.id)
-                  }
+                  onClick={() => setOpenMenu(openMenu === epigram.id ? null : epigram.id)}
                 >
                   ⋮
                 </button>
-                {selectedEpigram === epigram.id && (
+                {openMenu === epigram.id && (
                   <div className={styles.dropdownMenu}>
-                    <button onClick={() => router.push(`/epigrams/edit/${epigram.id}`)}>
+                    <button type="button" onClick={() => router.push(`/epigrams/${epigram.id}/edit`)}>
                       수정하기
                     </button>
-                    <button onClick={() => handleDelete(epigram.id)}>삭제하기</button>
+                    <button type="button" onClick={() => handleDelete(epigram.id)}>
+                      삭제하기
+                    </button>
                   </div>
                 )}
               </div>
             )}
-          </div>
+          </article>
         ))}
       </div>
 
       <div className={styles.buttonContainer}>
-        <button onClick={loadMoreEpigrams} className={styles.loadMoreButton}>
-          + 에피그램 더보기
-        </button>
-        <Link href="/addepigram" className={styles.createButton}>
+        {cursor && (
+          <button
+            type="button"
+            onClick={() => load(query, cursor)}
+            className={styles.loadMoreButton}
+            disabled={loading}
+          >
+            {loading ? "불러오는 중..." : "+ 에피그램 더보기"}
+          </button>
+        )}
+        <Link href={user ? "/addepigram" : "/login?next=/addepigram"} className={styles.createButton}>
           + 에피그램 만들기
         </Link>
       </div>
     </div>
   );
-};
-
-export default EpigramListPage;
+}

@@ -1,101 +1,81 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { postSignIn, getUser, UserResponse } from '@/api/api';
+import React, { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { getMe, signIn, signUp, tokenStore, User } from "@/api/api";
 
-interface AuthContextType {
-  accessToken: string | null;
-  user: UserResponse | null;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+interface SignUpBody {
+  email: string;
+  nickname: string;
+  password: string;
+  passwordConfirmation: string;
 }
 
-interface AuthProviderProps {
-  children: ReactNode;
+interface AuthContextType {
+  user: User | null;
+  /** 저장된 토큰으로 사용자 정보를 확인하는 중이면 false */
+  ready: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (body: SignUpBody) => Promise<void>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [user, setUser] = useState<UserResponse | null>(null);
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [ready, setReady] = useState(false);
 
-  // 새로고침 시 로컬 스토리지에서 accessToken 및 사용자 정보 불러오기
+  // 새로고침해도 로그인이 유지되도록, 저장된 토큰이 있으면 내 정보를 다시 받는다.
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-
-    console.log("🔍 Stored AccessToken:", token); // 디버깅
-
-    if (token) {
-      setAccessToken(token);
-      fetchUserData();
+    if (!tokenStore.get()) {
+      setReady(true);
+      return;
     }
+    getMe()
+      .then(setUser)
+      .catch(() => tokenStore.clear())
+      .finally(() => setReady(true));
   }, []);
 
-  // 사용자 정보 가져오기
-  const fetchUserData = async () => {
-    try {
-      const userData = await getUser();
-      if (userData) {
-        localStorage.setItem('user', JSON.stringify(userData));
-        setUser(userData);
-      }
-    } catch (error) {
-      console.error('🚨 유저 데이터를 불러오는데 실패했습니다:', error);
-    }
-  };
+  // 실패하면 예외를 그대로 던져서 화면이 오류 문구를 보여 줄 수 있게 한다.
+  const login = useCallback(async (email: string, password: string) => {
+    const res = await signIn(email, password);
+    tokenStore.set(res.accessToken, res.refreshToken);
+    setUser(res.user);
+  }, []);
 
-  const login = async (email: string, password: string) => {
-    try {
-      console.log("🔍 로그인 요청:", email, password);
-      const response = await postSignIn(email, password);
-  
-      if (response.accessToken) {
-        console.log("✅ 로그인 성공! 토큰 저장:", response.accessToken);
-        localStorage.setItem("accessToken", response.accessToken);
-        setAccessToken(response.accessToken);
-  
-        // 🔹 유저 정보 가져오기
-        console.log("🔍 로그인 후 유저 데이터 요청 실행...");
-        const userData = await getUser().catch((error) => {
-          console.error("🚨 유저 데이터 요청 실패:", error);
-        });
-  
-        if (userData) {
-          console.log("✅ 유저 데이터:", userData);
-          localStorage.setItem("user", JSON.stringify(userData));
-          setUser(userData);
-        } else {
-          console.error("🚨 유저 데이터를 불러오는데 실패했습니다.");
-        }
-      } else {
-        throw new Error("🚨 로그인 응답에 토큰이 없습니다.");
-      }
-    } catch (error) {
-      console.error("🚨 로그인 실패:", error);
-    }
-  };
+  const register = useCallback(async (body: SignUpBody) => {
+    const res = await signUp(body);
+    tokenStore.set(res.accessToken, res.refreshToken);
+    setUser(res.user);
+  }, []);
 
-  // 로그아웃
-  const logout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('user');
-    setAccessToken(null);
+  const logout = useCallback(() => {
+    tokenStore.clear();
     setUser(null);
-  };
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ accessToken, user, login, logout }}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={{ user, ready, login, register, logout }}>{children}</AuthContext.Provider>
   );
 };
 
-// Custom hook
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth는 AuthProvider 내에서 사용하세요.');
-  }
+  if (!context) throw new Error("useAuth는 AuthProvider 안에서 사용하세요.");
   return context;
+};
+
+/** 로그인이 필요한 화면에서 호출한다. 로그인하지 않았으면 로그인 화면으로 보내고, 로그인하면 돌아온다. */
+export const useRequireAuth = () => {
+  const { user, ready } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (ready && !user) router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+  }, [ready, user, router, pathname]);
+
+  return { user, ready: ready && !!user };
 };
