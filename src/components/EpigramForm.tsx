@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import styles from "@/app/addepigram/addepigram.module.css";
 import { EpigramInput } from "@/api/api";
 
 type AuthorType = "direct" | "unknown" | "self";
@@ -53,6 +52,13 @@ export default function EpigramForm({ title, submitLabel, nickname, initial, onS
     return next;
   };
 
+  const clearError = (key: string) =>
+    setErrors((e) => {
+      const rest = { ...e };
+      delete rest[key];
+      return rest;
+    });
+
   const addTag = () => {
     const tag = tagDraft.trim().replace(/^#/, "");
     if (!tag) return;
@@ -61,11 +67,7 @@ export default function EpigramForm({ title, submitLabel, nickname, initial, onS
     if (tags.length >= 3) return setErrors((e) => ({ ...e, tags: "태그는 3개까지 추가할 수 있습니다." }));
     setTags([...tags, tag]);
     setTagDraft("");
-    setErrors((e) => {
-      const rest = { ...e };
-      delete rest.tags;
-      return rest;
-    });
+    clearError("tags");
   };
 
   const handleTagKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -91,103 +93,143 @@ export default function EpigramForm({ title, submitLabel, nickname, initial, onS
   };
 
   return (
-    <form className={styles.container} onSubmit={handleSubmit} noValidate>
-      <h1 className={styles.title}>{title}</h1>
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-8">
+      <h1 className="text-2xl font-bold text-ink">{title}</h1>
 
-      <label className={styles.label} htmlFor="content">내용 *</label>
-      <textarea
-        id="content"
-        className={styles.textarea}
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        placeholder="500자 이내로 입력해 주세요."
-        maxLength={500}
-      />
-      <p className="text-right text-xs text-gray-400">{content.length} / 500</p>
-      {errors.content && <p className={styles.error}>{errors.content}</p>}
-
-      <span className={styles.label}>저자 *</span>
-      <div className={styles.radioGroup} role="radiogroup" aria-label="저자">
-        {(
-          [
-            ["direct", "직접 입력"],
-            ["unknown", "알 수 없음"],
-            ["self", "본인"],
-          ] as const
-        ).map(([value, label]) => (
-          <label key={value}>
-            <input
-              type="radio"
-              name="authorType"
-              value={value}
-              checked={authorType === value}
-              onChange={() => setAuthorType(value)}
-            />{" "}
-            {label}
-          </label>
-        ))}
-      </div>
-      {authorType === "direct" && (
-        <input
-          id="author"
-          className={styles.input}
-          type="text"
-          value={author}
-          onChange={(e) => setAuthor(e.target.value)}
-          placeholder="저자 이름 입력"
-          maxLength={30}
+      <div>
+        <label className="label" htmlFor="content">
+          내용 <span className="text-red">*</span>
+        </label>
+        <textarea
+          id="content"
+          className="field lined min-h-[180px] resize-y font-serif text-[17px] leading-[28px] [background-position:0_12px] [background-attachment:local]"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="500자 이내로 입력해 주세요."
+          maxLength={500}
         />
-      )}
-      {authorType === "self" && <p className="text-sm text-gray-500 mt-1">저자: {nickname}</p>}
-      {errors.author && <p className={styles.error}>{errors.author}</p>}
-
-      <label className={styles.label} htmlFor="referenceTitle">출처</label>
-      <input
-        id="referenceTitle"
-        className={styles.input}
-        type="text"
-        value={referenceTitle}
-        onChange={(e) => setReferenceTitle(e.target.value)}
-        placeholder="출처 제목 입력"
-        maxLength={100}
-      />
-      <input
-        id="referenceUrl"
-        className={styles.input}
-        type="url"
-        value={referenceUrl}
-        onChange={(e) => setReferenceUrl(e.target.value)}
-        placeholder="URL (예: https://www.website.com)"
-      />
-      {errors.reference && <p className={styles.error}>{errors.reference}</p>}
-
-      <label className={styles.label} htmlFor="tagDraft">태그 (최대 3개)</label>
-      <input
-        id="tagDraft"
-        className={styles.input}
-        type="text"
-        value={tagDraft}
-        onChange={(e) => setTagDraft(e.target.value)}
-        onKeyDown={handleTagKey}
-        placeholder="입력 후 Enter (10자 이내)"
-        maxLength={11}
-        disabled={tags.length >= 3}
-      />
-      {errors.tags && <p className={styles.error}>{errors.tags}</p>}
-      <div className={styles.tagContainer}>
-        {tags.map((tag) => (
-          <span key={tag} className={styles.tag}>
-            #{tag}{" "}
-            <button type="button" aria-label={`${tag} 태그 삭제`} onClick={() => setTags(tags.filter((t) => t !== tag))}>
-              ×
-            </button>
-          </span>
-        ))}
+        <div className="mt-1.5 flex justify-between text-sm">
+          <span className="text-red">{errors.content}</span>
+          <span className="text-faint">{content.length} / 500</span>
+        </div>
       </div>
 
-      {submitError && <p className={styles.error}>{submitError}</p>}
-      <button type="submit" className={styles.submitButton} disabled={submitting}>
-        {submitting ? "저장 중..." : submitLabel}
+      <fieldset>
+        <legend className="label">
+          저자 <span className="text-red">*</span>
+        </legend>
+        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="저자">
+          {(
+            [
+              ["direct", "직접 입력"],
+              ["unknown", "알 수 없음"],
+              ["self", "본인"],
+            ] as const
+          ).map(([value, label]) => (
+            <label
+              key={value}
+              className={`cursor-pointer rounded-full border px-4 py-2 text-sm transition ${
+                authorType === value ? "border-ink bg-ink text-white" : "border-line bg-surface text-sub hover:border-faint"
+              }`}
+            >
+              <input
+                type="radio"
+                name="authorType"
+                value={value}
+                checked={authorType === value}
+                onChange={() => setAuthorType(value)}
+                className="sr-only"
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+        {authorType === "direct" && (
+          <input
+            id="author"
+            className="field mt-3"
+            type="text"
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
+            placeholder="저자 이름 입력"
+            maxLength={30}
+            aria-label="저자 이름"
+          />
+        )}
+        {authorType === "self" && <p className="mt-3 text-sm text-sub">저자: {nickname}</p>}
+        {errors.author && <p className="error-text">{errors.author}</p>}
+      </fieldset>
+
+      <div>
+        <label className="label" htmlFor="referenceTitle">
+          출처 <span className="font-normal text-faint">(선택)</span>
+        </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <input
+            id="referenceTitle"
+            className="field"
+            type="text"
+            value={referenceTitle}
+            onChange={(e) => setReferenceTitle(e.target.value)}
+            placeholder="출처 제목 (예: 논어 학이편)"
+            maxLength={100}
+          />
+          <input
+            id="referenceUrl"
+            className="field"
+            type="url"
+            value={referenceUrl}
+            onChange={(e) => setReferenceUrl(e.target.value)}
+            placeholder="URL (https://…)"
+            aria-label="출처 URL"
+          />
+        </div>
+        {errors.reference && <p className="error-text">{errors.reference}</p>}
+      </div>
+
+      <div>
+        <label className="label" htmlFor="tagDraft">
+          태그 <span className="font-normal text-faint">(최대 3개, 10자 이내)</span>
+        </label>
+        <div className="flex gap-2">
+          <input
+            id="tagDraft"
+            className="field"
+            type="text"
+            value={tagDraft}
+            onChange={(e) => setTagDraft(e.target.value)}
+            onKeyDown={handleTagKey}
+            placeholder={tags.length >= 3 ? "태그를 모두 추가했어요" : "입력 후 Enter"}
+            maxLength={11}
+            disabled={tags.length >= 3}
+          />
+          <button type="button" className="btn-ghost shrink-0" onClick={addTag} disabled={tags.length >= 3}>
+            추가
+          </button>
+        </div>
+        {errors.tags && <p className="error-text">{errors.tags}</p>}
+        {tags.length > 0 && (
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {tags.map((tag) => (
+              <li key={tag} className="flex items-center gap-1 rounded-full bg-brand-soft py-1 pl-3 pr-1.5 text-sm text-brand">
+                #{tag}
+                <button
+                  type="button"
+                  aria-label={`${tag} 태그 삭제`}
+                  onClick={() => setTags(tags.filter((t) => t !== tag))}
+                  className="grid h-5 w-5 place-items-center rounded-full hover:bg-brand/10"
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {submitError && <p className="error-text">{submitError}</p>}
+      <button type="submit" className="btn-primary w-full py-3.5 text-base" disabled={submitting}>
+        {submitting ? "저장 중…" : submitLabel}
       </button>
     </form>
   );

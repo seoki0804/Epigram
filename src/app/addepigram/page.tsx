@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import Header from "@/components/Header";
+import Page from "@/components/Page";
 import EpigramForm from "@/components/EpigramForm";
 import { createEpigram, errorMessage, EpigramInput } from "@/api/api";
 import { useRequireAuth } from "@/utils/AuthContext";
@@ -20,11 +20,10 @@ export default function AddEpigramPage() {
   };
 
   return (
-    <div>
-      <Header />
+    <Page width="max-w-2xl">
       {ready && user && (
         <EpigramForm title="에피그램 만들기" submitLabel="작성 완료" nickname={user.nickname} onSubmit={handleSubmit} />
       )}
-    </div>
+    </Page>
   );
 }

@@ -3,10 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { formatDistanceToNow } from "date-fns";
-import { ko } from "date-fns/locale";
-import styles from "./epigramDetail.module.css";
 import Header from "@/components/Header";
+import CommentItem from "@/components/CommentItem";
 import {
   Comment,
   createComment,
@@ -32,6 +30,7 @@ export default function EpigramDetailPage() {
   const [epigram, setEpigram] = useState<EpigramDetail | null>(null);
   const [loadError, setLoadError] = useState("");
   const [liking, setLiking] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentCursor, setCommentCursor] = useState<number | null>(null);
@@ -78,6 +77,16 @@ export default function EpigramDetailPage() {
       setLoadError(errorMessage(err, "좋아요를 반영하지 못했습니다."));
     } finally {
       setLiking(false);
+    }
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
     }
   };
 
@@ -131,134 +140,175 @@ export default function EpigramDetailPage() {
   const isMine = !!user && !!epigram && epigram.writerId === user.id;
 
   return (
-    <div className={styles.container}>
+    <>
       <Header />
 
-      {loadError && <p className="text-center text-gray-500 mt-10">{loadError}</p>}
+      <section className="border-b border-line bg-surface">
+        <div className="mx-auto w-full max-w-3xl px-5 pb-10 pt-12 sm:px-8">
+          {loadError && <p className="error-text">{loadError}</p>}
+          {!epigram && !loadError && <div className="h-40 animate-pulse rounded-2xl bg-paper" />}
+          {epigram && (
+            <article>
+              <div className="flex items-start justify-between gap-4">
+                <ul className="flex flex-wrap gap-2">
+                  {epigram.tags.map((t) => (
+                    <li key={t.id}>
+                      <Link
+                        href={`/epigramlist?q=${encodeURIComponent(t.name)}`}
+                        className="rounded-full bg-paper px-3 py-1 text-sm text-sub hover:text-ink"
+                      >
+                        #{t.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                {isMine && (
+                  <div className="flex shrink-0 gap-2">
+                    <Link href={`/epigrams/${id}/edit`} className="btn-ghost px-3 py-1.5">
+                      수정
+                    </Link>
+                    <button type="button" onClick={handleDelete} className="btn-ghost px-3 py-1.5 text-red">
+                      삭제
+                    </button>
+                  </div>
+                )}
+              </div>
 
-      {epigram && (
-        <article className={`${styles.epigramBox} mt-8`}>
-          <div className={styles.tags}>
-            {epigram.tags.map((tag) => (
-              <span key={tag.id}>#{tag.name}</span>
-            ))}
-          </div>
-          <div className={styles.header}>
-            <h2 className="text-xl leading-relaxed whitespace-pre-line">{epigram.content}</h2>
-            {isMine && (
-              <div className={styles.options}>
-                <button type="button" onClick={() => router.push(`/epigrams/${id}/edit`)}>
-                  수정
+              <h1 className="mt-8 whitespace-pre-line font-serif text-2xl leading-[1.6] text-ink sm:text-[28px]">
+                {epigram.content}
+              </h1>
+              <p className="mt-6 text-right font-serif text-lg text-sub">— {epigram.author} —</p>
+              {(epigram.referenceTitle || epigram.referenceUrl) && (
+                <p className="mt-2 text-right text-sm text-faint">
+                  출처:{" "}
+                  {epigram.referenceUrl ? (
+                    <a href={epigram.referenceUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-sub">
+                      {epigram.referenceTitle || epigram.referenceUrl}
+                    </a>
+                  ) : (
+                    epigram.referenceTitle
+                  )}
+                </p>
+              )}
+
+              <div className="mt-10 flex flex-wrap justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={toggleLike}
+                  disabled={liking}
+                  aria-pressed={!!epigram.isLiked}
+                  className={`btn rounded-full px-5 ${epigram.isLiked ? "bg-ink text-white" : "border border-line bg-surface text-ink hover:border-faint"}`}
+                >
+                  {epigram.isLiked ? "♥" : "♡"} {epigram.likeCount}
                 </button>
-                <button type="button" onClick={handleDelete}>
-                  삭제
+                <button type="button" onClick={copyLink} className="btn-ghost rounded-full px-5">
+                  {copied ? "복사했어요" : "링크 복사"}
                 </button>
               </div>
-            )}
-          </div>
-          <div className={styles.details}>
-            <p>- {epigram.author}</p>
-            {epigram.referenceUrl ? (
-              <a href={epigram.referenceUrl} target="_blank" rel="noopener noreferrer">
-                {epigram.referenceTitle || "출처 바로가기"}
-              </a>
-            ) : (
-              epigram.referenceTitle && <p className="text-gray-400">{epigram.referenceTitle}</p>
-            )}
-          </div>
-          <button
-            type="button"
-            className={styles.likeButton}
-            onClick={toggleLike}
-            disabled={liking}
-            aria-pressed={!!epigram.isLiked}
-          >
-            {epigram.isLiked ? "♥" : "♡"} {epigram.likeCount}
-          </button>
-        </article>
-      )}
+            </article>
+          )}
+        </div>
+      </section>
 
-      <section className={styles.commentSection}>
-        <h3>댓글 ({commentTotal})</h3>
+      <main className="mx-auto w-full max-w-3xl px-5 pb-24 pt-10 sm:px-8">
+        <h2 className="text-lg font-bold text-ink">댓글 {commentTotal}</h2>
 
         {user ? (
-          <form onSubmit={submitComment} className={`${styles.comment} flex flex-col gap-2`}>
+          <form onSubmit={submitComment} className="mt-4 rounded-2xl border border-line bg-surface p-4">
+            <label htmlFor="comment-draft" className="sr-only">
+              댓글 입력
+            </label>
             <textarea
+              id="comment-draft"
               placeholder="100자 이내로 입력해 주세요."
               maxLength={100}
+              rows={3}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              aria-label="댓글 입력"
+              className="w-full resize-none bg-transparent text-[15px] leading-relaxed text-ink placeholder:text-faint focus:outline-none"
             />
-            <div className="flex items-center justify-between">
-              <label className="text-sm text-gray-500 flex items-center gap-1">
-                <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} />
+            <div className="mt-2 flex items-center justify-between">
+              <label className="flex items-center gap-2 text-sm text-sub">
+                <input
+                  id="comment-private"
+                  type="checkbox"
+                  checked={isPrivate}
+                  onChange={(e) => setIsPrivate(e.target.checked)}
+                  className="h-4 w-4 accent-brand"
+                />
                 비공개
               </label>
-              <button type="submit" className="text-sm px-4 py-1.5 rounded-md bg-black text-white" disabled={!draft.trim()}>
-                등록
-              </button>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-faint">{draft.length}/100</span>
+                <button type="submit" className="btn-primary px-4 py-2" disabled={!draft.trim()}>
+                  등록
+                </button>
+              </div>
             </div>
           </form>
         ) : (
-          <p className="text-sm text-gray-500 my-3">
+          <p className="mt-4 rounded-2xl border border-dashed border-line px-5 py-6 text-center text-sm text-sub">
             댓글을 쓰려면{" "}
-            <Link href={`/login?next=${encodeURIComponent(`/epigrams/${id}`)}`} className="underline">
+            <Link href={`/login?next=${encodeURIComponent(`/epigrams/${id}`)}`} className="font-semibold text-brand">
               로그인
             </Link>
             해 주세요.
           </p>
         )}
-        {commentError && <p className="text-sm text-red mt-2">{commentError}</p>}
+        {commentError && <p className="error-text">{commentError}</p>}
 
-        <ul className="mt-4 divide-y divide-gray-200">
+        <ul className="mt-4 divide-y divide-line">
           {comments.map((comment) => (
-            <li key={comment.id} className={`${styles.comment} py-3`}>
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">
-                  {comment.writer.nickname}
-                  {comment.isPrivate && <span className="ml-2 text-xs text-gray-400">비공개</span>}
-                </span>
-                <span className="text-xs text-gray-400">
-                  {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: ko })}
-                </span>
-              </div>
+            <CommentItem key={comment.id} comment={comment} hideContent={editingId === comment.id}>
               {editingId === comment.id ? (
-                <div className="flex flex-col gap-2 mt-2">
-                  <textarea value={editDraft} maxLength={100} onChange={(e) => setEditDraft(e.target.value)} aria-label="댓글 수정" />
-                  <div className="flex gap-2 justify-end text-sm">
-                    <button type="button" onClick={() => setEditingId(null)}>취소</button>
-                    <button type="button" onClick={() => saveEdit(comment.id)} className="font-medium">저장</button>
+                <div className="mt-3 pl-9">
+                  <textarea
+                    value={editDraft}
+                    maxLength={100}
+                    rows={2}
+                    onChange={(e) => setEditDraft(e.target.value)}
+                    aria-label="댓글 수정"
+                    className="field resize-none"
+                  />
+                  <div className="mt-2 flex justify-end gap-2">
+                    <button type="button" className="btn-ghost px-3 py-1.5" onClick={() => setEditingId(null)}>
+                      취소
+                    </button>
+                    <button type="button" className="btn-primary px-3 py-1.5" onClick={() => saveEdit(comment.id)}>
+                      저장
+                    </button>
                   </div>
                 </div>
               ) : (
-                <p className="mt-1 whitespace-pre-line">{comment.content}</p>
+                user?.id === comment.writer.id && (
+                  <div className="mt-1 flex justify-end gap-3 text-xs text-faint">
+                    <button
+                      type="button"
+                      className="hover:text-ink"
+                      onClick={() => {
+                        setEditingId(comment.id);
+                        setEditDraft(comment.content);
+                      }}
+                    >
+                      수정
+                    </button>
+                    <button type="button" className="hover:text-red" onClick={() => removeComment(comment.id)}>
+                      삭제
+                    </button>
+                  </div>
+                )
               )}
-              {user?.id === comment.writer.id && editingId !== comment.id && (
-                <div className="flex gap-3 justify-end text-xs text-gray-400 mt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingId(comment.id);
-                      setEditDraft(comment.content);
-                    }}
-                  >
-                    수정
-                  </button>
-                  <button type="button" onClick={() => removeComment(comment.id)}>
-                    삭제
-                  </button>
-                </div>
-              )}
-            </li>
+            </CommentItem>
           ))}
         </ul>
         {commentCursor && (
-          <button type="button" className="w-full text-sm text-gray-500 py-3" onClick={() => loadComments(commentCursor)}>
-            댓글 더보기
-          </button>
+          <div className="mt-4 text-center">
+            <button type="button" className="btn-ghost" onClick={() => loadComments(commentCursor)}>
+              댓글 더보기
+            </button>
+          </div>
         )}
-      </section>
-    </div>
+      </main>
+    </>
   );
 }

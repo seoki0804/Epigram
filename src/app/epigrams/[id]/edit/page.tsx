@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Header from "@/components/Header";
+import Page, { Empty } from "@/components/Page";
 import EpigramForm from "@/components/EpigramForm";
 import { errorMessage, EpigramDetail, EpigramInput, getEpigram, updateEpigram } from "@/api/api";
 import { useRequireAuth } from "@/utils/AuthContext";
@@ -32,10 +32,9 @@ export default function EditEpigramPage() {
   const notMine = ready && epigram && user && epigram.writerId !== user.id;
 
   return (
-    <div>
-      <Header />
-      {loadError && <p className="text-center text-gray-500 mt-16">{loadError}</p>}
-      {notMine && <p className="text-center text-gray-500 mt-16">내가 쓴 에피그램만 수정할 수 있습니다.</p>}
+    <Page width="max-w-2xl">
+      {loadError && <Empty>{loadError}</Empty>}
+      {notMine && <Empty>내가 쓴 에피그램만 수정할 수 있어요.</Empty>}
       {ready && user && epigram && !notMine && (
         <EpigramForm
           title="에피그램 수정"
@@ -51,6 +50,6 @@ export default function EditEpigramPage() {
           onSubmit={handleSubmit}
         />
       )}
-    </div>
+    </Page>
   );
 }

@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 데모 계정 정보 (로컬 전용)
+DEMO_ACCOUNT.txt

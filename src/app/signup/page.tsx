@@ -1,174 +1,152 @@
 "use client";
+
 import React, { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import axios from "axios";
+import AuthShell, { PasswordInput } from "@/components/AuthShell";
 import { errorMessage } from "@/api/api";
 import { useAuth } from "@/utils/AuthContext";
 
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PASSWORD = /^[A-Za-z0-9!@#$%^&*]+$/; // API 명세와 같은 규칙
+
+type Field = "email" | "nickname" | "password" | "confirm" | "form";
+
 export default function Signup() {
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
-  const [passworConfirmation, setPassworConfirmation] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showpassworConfirmation, setShowpassworConfirmation] = useState(false);
-  const [emailError, setEmailError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [passwordMatchError, setPasswordMatchError] = useState("");
-  const [signupError, setSignupError] = useState<string | null>(null);
-  const [nameError, setNameError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
   const { register } = useAuth();
   const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [nickname, setNickname] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
+  const [submitting, setSubmitting] = useState(false);
 
-  const validateEmail = (email: string) =>
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-  const handleEmailBlur = () => {
-    setEmailError(validateEmail(email) ? "" : "이메일 형식으로 작성해 주세요.");
+  const check = (field: Exclude<Field, "form">) => {
+    switch (field) {
+      case "email":
+        return EMAIL.test(email) ? undefined : "이메일 형식으로 입력해 주세요.";
+      case "nickname":
+        return !nickname.trim() ? "닉네임을 입력해 주세요." : nickname.length > 30 ? "닉네임은 30자 이내입니다." : undefined;
+      case "password":
+        if (password.length < 8) return "비밀번호는 8자 이상이어야 합니다.";
+        return PASSWORD.test(password) ? undefined : "영문, 숫자, 특수문자(!@#$%^&*)만 쓸 수 있어요.";
+      case "confirm":
+        return confirm && confirm === password ? undefined : "비밀번호가 일치하지 않습니다.";
+    }
   };
 
-  const handlePasswordBlur = () => {
-    setPasswordError(password.length >= 8 ? "" : "비밀번호는 8자 이상이어야 합니다.");
-  };
-
-  const handlepassworConfirmationBlur = () => {
-    setPasswordMatchError(password === passworConfirmation ? "" : "비밀번호가 일치하지 않습니다.");
-  };
+  const blur = (field: Exclude<Field, "form">) => () => setErrors((s) => ({ ...s, [field]: check(field) }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSignupError(null);
-    handleEmailBlur();
-    handlePasswordBlur();
-    handlepassworConfirmationBlur();
-    setNameError(name.trim() ? "" : "닉네임을 입력해 주세요.");
-    if (!validateEmail(email) || password.length < 8 || password !== passworConfirmation || !name.trim()) return;
-
+    const found = {
+      email: check("email"),
+      nickname: check("nickname"),
+      password: check("password"),
+      confirm: check("confirm"),
+    };
+    setErrors(found);
+    if (Object.values(found).some(Boolean)) return;
     setSubmitting(true);
     try {
-      // 가입 응답에 토큰이 같이 오므로 바로 로그인 상태로 피드에 들어간다.
-      await register({ email, nickname: name.trim(), password, passwordConfirmation: passworConfirmation });
-      router.replace("/epigramlist");
-    } catch (error) {
-      setSignupError(errorMessage(error, "회원가입에 실패했습니다. 다시 시도해 주세요."));
+      // 가입 응답에 토큰이 같이 오므로 바로 로그인 상태로 메인에 들어간다.
+      await register({ email, nickname: nickname.trim(), password, passwordConfirmation: confirm });
+      router.replace("/main");
+    } catch (err) {
+      // 이 API는 이미 있는 이메일·닉네임이면 400이 아니라 500을 돌려준다.
+      const duplicate = axios.isAxiosError(err) && (err.response?.status ?? 0) >= 500;
+      setErrors({
+        form: duplicate
+          ? "이미 사용 중인 이메일이나 닉네임일 수 있어요. 다른 값으로 다시 시도해 주세요."
+          : errorMessage(err, "회원가입에 실패했습니다. 잠시 후 다시 시도해 주세요."),
+      });
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="flex flex-col justify-center items-center min-h-screen bg-[#ECEFF4] font-sans">
-      {/* 상단 로고 추가 */}
-      <div className="w-full bg-white py-4 flex justify-center border-b">
-        <Image src="/epigram_image/ic_epigram.svg" alt="Logo" width={133} height={24} />
-      </div>
-
-      {/* 회원가입 폼 */}
-      <div className="w-[325px] sm:w-[400px] bg-[#ECEFF4] rounded-[8px] text-center p-[24px] mt-6 shadow-md">
-        <Link href="/" passHref className="flex justify-center mb-[16px]">
-          <div>
-            <Image src="/epigram_image/ic_epigram.svg" alt="Logo" width={210} height={38} priority />
-          </div>
-        </Link>
-        <p className="text-[16px]">
-          이미 회원이신가요?
-          <Link href="/login" className="ml-[8px] font-semibold text-[#6D6AFE] underline">
-            로그인 하기
+    <AuthShell
+      title="회원가입"
+      footer={
+        <>
+          이미 회원이신가요?{" "}
+          <Link href="/login" className="font-semibold text-brand">
+            로그인
           </Link>
-        </p>
-
-        <form onSubmit={handleSubmit} className="mt-6">
-          {/* 이메일 입력 */}
-          <div className="mb-[20px] text-left">
-            <label htmlFor="email" className="block mb-[8px] text-[#333] text-[14px]">이메일</label>
-            <input
-              type="text"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onBlur={handleEmailBlur}
-              placeholder="이메일 입력"
-              className={`w-full h-[50px] px-4 border rounded-md ${emailError ? 'border-red' : 'border-gray-300'}`}
-            />
-            {emailError && <p className="text-red text-[12px] mt-[4px]">{emailError}</p>}
-          </div>
-
-          {/* 이름 입력 */}
-          <div className="mb-[20px] text-left">
-            <label htmlFor="name" className="block mb-[8px] text-[#333] text-[14px]">닉네임</label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="닉네임 입력 (30자 이내)"
-              maxLength={30}
-              className={`w-full h-[50px] px-4 border rounded-md ${nameError ? 'border-red' : 'border-gray-300'}`}
-            />
-            {nameError && <p className="text-red text-[12px] mt-[4px]">{nameError}</p>}
-          </div>
-
-          {/* 비밀번호 입력 */}
-          <div className="mb-[20px] text-left relative">
-            <label htmlFor="password" className="block mb-[8px] text-[#333] text-[14px]">비밀번호</label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onBlur={handlePasswordBlur}
-                placeholder="비밀번호 입력"
-                className={`w-full h-[50px] px-4 border rounded-md ${passwordError ? 'border-red' : 'border-gray-300'}`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute top-1/2 right-3 transform -translate-y-1/2"
-              >
-                <Image src={showPassword ? "/icons/ic_eye_off.svg" : "/icons/ic_eye_on.svg"} alt="비밀번호 보기" width={16} height={16} />
-              </button>
-            </div>
-            {passwordError && <p className="text-red text-[12px] mt-[4px]">{passwordError}</p>}
-          </div>
-
-          {/* 비밀번호 확인 */}
-          <div className="mb-[30px] text-left relative">
-            <label htmlFor="passworConfirmation" className="block mb-[8px] text-[#333] text-[14px]">비밀번호 확인</label>
-            <div className="relative">
-              <input
-                type={showpassworConfirmation ? "text" : "password"}
-                id="passworConfirmation"
-                value={passworConfirmation}
-                onChange={(e) => setPassworConfirmation(e.target.value)}
-                onBlur={handlepassworConfirmationBlur}
-                placeholder="비밀번호 확인 입력"
-                className={`w-full h-[50px] px-4 border rounded-md ${passwordMatchError ? 'border-red' : 'border-gray-300'}`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowpassworConfirmation(!showpassworConfirmation)}
-                className="absolute top-1/2 right-3 transform -translate-y-1/2"
-              >
-                <Image src={showpassworConfirmation ? "/icons/ic_eye_off.svg" : "/icons/ic_eye_on.svg"} alt="비밀번호 보기" width={16} height={16} />
-              </button>
-            </div>
-            {passwordMatchError && <p className="text-red text-[12px] mt-[4px]">{passwordMatchError}</p>}
-          </div>
-
-          {signupError && <p className="text-red text-[12px] mt-[4px]">{signupError}</p>}
-
-          {/* 회원가입 버튼 */}
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full h-[50px] text-[18px] font-bold rounded-md bg-[#CBD3E1] text-white hover:bg-[#6D6AFE] transition disabled:opacity-60"
-          >
-            {submitting ? "가입 중..." : "회원가입"}
-          </button>
-        </form>
-      </div>
-    </div>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+        <div>
+          <label htmlFor="email" className="label">
+            이메일
+          </label>
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onBlur={blur("email")}
+            placeholder="you@example.com"
+            className={`field ${errors.email ? "border-red" : ""}`}
+          />
+          {errors.email && <p className="error-text">{errors.email}</p>}
+        </div>
+        <div>
+          <label htmlFor="nickname" className="label">
+            닉네임
+          </label>
+          <input
+            id="nickname"
+            type="text"
+            autoComplete="nickname"
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            onBlur={blur("nickname")}
+            placeholder="30자 이내"
+            maxLength={30}
+            className={`field ${errors.nickname ? "border-red" : ""}`}
+          />
+          {errors.nickname && <p className="error-text">{errors.nickname}</p>}
+        </div>
+        <div>
+          <label htmlFor="password" className="label">
+            비밀번호
+          </label>
+          <PasswordInput
+            id="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onBlur={blur("password")}
+            placeholder="영문·숫자·특수문자 8자 이상"
+            invalid={!!errors.password}
+          />
+          {errors.password && <p className="error-text">{errors.password}</p>}
+        </div>
+        <div>
+          <label htmlFor="confirm" className="label">
+            비밀번호 확인
+          </label>
+          <PasswordInput
+            id="confirm"
+            autoComplete="new-password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            onBlur={blur("confirm")}
+            placeholder="한 번 더 입력"
+            invalid={!!errors.confirm}
+          />
+          {errors.confirm && <p className="error-text">{errors.confirm}</p>}
+        </div>
+        {errors.form && <p className="error-text">{errors.form}</p>}
+        <button type="submit" disabled={submitting} className="btn-primary mt-1 w-full py-3.5 text-base">
+          {submitting ? "가입 중…" : "가입하기"}
+        </button>
+      </form>
+    </AuthShell>
   );
 }

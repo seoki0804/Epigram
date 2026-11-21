@@ -133,11 +133,16 @@ instance.interceptors.response.use(
   }
 );
 
-/** API 오류를 사용자에게 보여 줄 문장으로 바꾼다. */
+/** API 오류를 사용자에게 보여 줄 문장으로 바꾼다. 서버의 영어 기본 문구는 그대로 보여 주지 않는다. */
 export function errorMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError(error)) {
     const msg = (error.response?.data as { message?: string } | undefined)?.message;
-    if (msg) return msg;
+    const status = error.response?.status;
+    if (status && status >= 500) return fallback;
+    if (msg === "Validation Failed") return "입력한 값을 다시 확인해 주세요.";
+    if (msg && /[가-힣]/.test(msg)) return msg;
+    if (status === 404) return "찾을 수 없습니다. 삭제되었을 수 있습니다.";
+    if (status === 403) return "권한이 없습니다.";
     if (error.response?.status === 401) return "로그인이 필요합니다.";
     if (!error.response) return "서버에 연결하지 못했습니다. 네트워크를 확인해 주세요.";
   }
@@ -203,7 +208,47 @@ export const likeEpigram = async (id: number | string) =>
 export const unlikeEpigram = async (id: number | string) =>
   (await instance.delete<EpigramDetail>(`/epigrams/${id}/like`)).data;
 
+export const getTodayEpigram = async () =>
+  (await instance.get<EpigramDetail | null>("/epigrams/today")).data;
+
+// ── Emotion ─────────────────────────────────────────────────
+export type Emotion = "MOVED" | "HAPPY" | "WORRIED" | "SAD" | "ANGRY";
+
+export interface EmotionLog {
+  id: number;
+  userId: number;
+  emotion: Emotion;
+  createdAt: string;
+}
+
+export const getTodayEmotion = async (userId: number) =>
+  (await instance.get<EmotionLog | null>("/emotionLogs/today", { params: { userId } })).data;
+
+export const saveTodayEmotion = async (emotion: Emotion) =>
+  (await instance.post<EmotionLog>("/emotionLogs/today", { emotion })).data;
+
+export const getMonthlyEmotions = async (userId: number, year: number, month: number) =>
+  (await instance.get<EmotionLog[]>("/emotionLogs/monthly", { params: { userId, year, month } })).data;
+
+// ── User ────────────────────────────────────────────────────
+export const updateMe = async (body: { nickname?: string; image?: string }) =>
+  (await instance.patch<User>("/users/me", body)).data;
+
+export const getUserComments = async (userId: number, params: { limit: number; cursor?: number | null }) =>
+  (
+    await instance.get<Page<Comment>>(`/users/${userId}/comments`, {
+      params: { limit: params.limit, ...(params.cursor ? { cursor: params.cursor } : {}) },
+    })
+  ).data;
+
 // ── Comment ─────────────────────────────────────────────────
+export const getRecentComments = async (params: { limit: number; cursor?: number | null }) =>
+  (
+    await instance.get<Page<Comment>>("/comments", {
+      params: { limit: params.limit, ...(params.cursor ? { cursor: params.cursor } : {}) },
+    })
+  ).data;
+
 export const getEpigramComments = async (
   epigramId: number | string,
   params: { limit: number; cursor?: number | null }
